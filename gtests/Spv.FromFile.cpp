@@ -651,6 +651,7 @@ INSTANTIATE_TEST_CASE_P(
         "spv.int16.frag",
         "spv.int16.amd.frag",
         "spv.shaderBallotAMD.comp",
+        "spv.shaderExts.vert",
         "spv.shaderFragMaskAMD.frag",
         "spv.textureGatherBiasLod.frag",
     })),

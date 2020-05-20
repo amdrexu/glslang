@@ -346,6 +346,7 @@ extern int yylex(YYSTYPE*, TParseContext&);
 %type <interm.type> precise_qualifier non_uniform_qualifier
 %type <interm.typeList> type_name_list
 %type <interm.attributes> attribute attribute_list single_attribute
+%type <interm.intermNode> attribute_argument_list
 %type <interm.intermNode> demote_statement
 %type <interm.intermTypedNode> initializer_list
 
@@ -929,6 +930,11 @@ function_prototype
     : function_declarator RIGHT_PAREN  {
         $$.function = $1;
         $$.loc = $2.loc;
+    }
+    | attribute function_declarator RIGHT_PAREN {
+        parseContext.handleFunctionDeclaratorAttributes($3.loc, *$1, $2);
+        $$.function = $2;
+        $$.loc = $3.loc;
     }
     ;
 
@@ -3864,7 +3870,9 @@ function_definition
 attribute
     : LEFT_BRACKET LEFT_BRACKET attribute_list RIGHT_BRACKET RIGHT_BRACKET {
         $$ = $3;
-        parseContext.requireExtensions($1.loc, 1, &E_GL_EXT_control_flow_attributes, "attribute");
+        const char* const attribute_EXTs[] = { E_GL_EXT_control_flow_attributes, E_GL_AMD_shader_extensions };
+        const int Num_attribute_EXTs = sizeof(attribute_EXTs) / sizeof(attribute_EXTs[0]);
+        parseContext.requireExtensions($1.loc, Num_attribute_EXTs, attribute_EXTs, "attribute");
     }
 
 attribute_list
@@ -3879,8 +3887,16 @@ single_attribute
     : IDENTIFIER {
         $$ = parseContext.makeAttributes(*$1.string);
     }
-    | IDENTIFIER LEFT_PAREN constant_expression RIGHT_PAREN {
-        $$ = parseContext.makeAttributes(*$1.string, $3);
+    | IDENTIFIER LEFT_PAREN attribute_argument_list RIGHT_PAREN {
+        $$ = parseContext.makeAttributes(*$1.string, $3->getAsAggregate());
+    }
+
+attribute_argument_list
+    : constant_expression {
+        $$ = parseContext.intermediate.makeAggregate($1);
+    }
+    | attribute_argument_list COMMA constant_expression {
+        $$ = parseContext.intermediate.growAggregate($1, $3, $2.loc);
     }
 
 

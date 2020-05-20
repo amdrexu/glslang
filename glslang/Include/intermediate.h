@@ -71,6 +71,7 @@ enum TOperator {
     EOpFunctionCall,
     EOpFunction,        // For function definition
     EOpParameters,      // an aggregate listing the parameters to a function
+    EOpSpirvExtInst,
 
     //
     // Unary operators
@@ -1609,8 +1610,8 @@ typedef TVector<TStorageQualifier> TQualifierList;
 //
 class TIntermAggregate : public TIntermOperator {
 public:
-    TIntermAggregate() : TIntermOperator(EOpNull), userDefined(false), pragmaTable(nullptr) { }
-    TIntermAggregate(TOperator o) : TIntermOperator(o), pragmaTable(nullptr) { }
+    TIntermAggregate() : TIntermOperator(EOpNull), userDefined(false), pragmaTable(nullptr), libCall("", -1) { }
+    TIntermAggregate(TOperator o) : TIntermOperator(o), pragmaTable(nullptr), libCall("", -1) { }
     ~TIntermAggregate() { delete pragmaTable; }
     virtual       TIntermAggregate* getAsAggregate()       { return this; }
     virtual const TIntermAggregate* getAsAggregate() const { return this; }
@@ -1630,6 +1631,8 @@ public:
     bool getDebug() const { return debug; }
     void setPragmaTable(const TPragmaTable& pTable);
     const TPragmaTable& getPragmaTable() const { return *pragmaTable; }
+    void setLibraryFunctionCall(const std::pair<TString, int>& call) { libCall = call; }
+    const std::pair<TString, int>& getLibraryFunctionCall() const { return libCall; }
 protected:
     TIntermAggregate(const TIntermAggregate&); // disallow copy constructor
     TIntermAggregate& operator=(const TIntermAggregate&); // disallow assignment operator
@@ -1640,6 +1643,7 @@ protected:
     bool optimize;
     bool debug;
     TPragmaTable* pragmaTable;
+    std::pair<TString, int> libCall;
 };
 
 //

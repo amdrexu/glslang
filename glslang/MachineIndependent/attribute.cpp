@@ -123,6 +123,8 @@ TAttributeType TParseContext::attributeFromName(const TString& name) const
         return EatPeelCount;
     else if (name == "partial_count")
         return EatPartialCount;
+    else if (name == "spirv_extinst")
+        return EatSpirvExtInst;
     else
         return EatNone;
 }
@@ -137,15 +139,12 @@ TAttributes* TParseContext::makeAttributes(const TString& identifier) const
     return attributes;
 }
 
-// Make an initial leaf for the grammar from a one-argument attribute
-TAttributes* TParseContext::makeAttributes(const TString& identifier, TIntermNode* node) const
+// Make an initial leaf for the grammar from an attribute with arguments
+TAttributes* TParseContext::makeAttributes(const TString& identifier, TIntermAggregate* agg) const
 {
     TAttributes *attributes = nullptr;
     attributes = NewPoolObject(attributes);
 
-    // for now, node is always a simple single expression, but other code expects
-    // a list, so make it so
-    TIntermAggregate* agg = intermediate.makeAggregate(node);
     TAttributeArgs args = { attributeFromName(identifier), agg };
     attributes->push_back(args);
     return attributes;
@@ -336,6 +335,42 @@ void TParseContext::handleLoopAttributes(const TAttributes& attributes, TIntermN
             break;
         default:
             warn(node->getLoc(), "attribute does not apply to a loop", "", "");
+            break;
+        }
+    }
+}
+
+//
+// Function declarator attributes
+//
+void TParseContext::handleFunctionDeclaratorAttributes(const TSourceLoc& loc, const TAttributes& attributes, TFunction* func)
+{
+    if (func == nullptr)
+        return;
+
+    if (attributes.size() > 1)
+        warn(loc, "too many attribute applied to a function delaration", "", "");
+
+    for (auto it = attributes.begin(); it != attributes.end(); ++it) {
+        switch (it->name) {
+        case EatSpirvExtInst: {
+            const char* feature = "spirv_extinst";
+            if (it->size() != 2)
+                warn(loc, "expected two arguments", feature, "");
+
+            TString libName("");
+            if (!it->getString(libName, 0, false))
+                warn(loc, "expected a string literal as the first agrument", feature, "");
+
+            int entryPoint = 0;
+            if (!it->getInt(entryPoint, 1) || entryPoint < 0)
+                warn(loc, "expected a single integer (greater than or equal to 0) as the second argument", feature, "");
+
+            func->setLibraryFunctionCall(std::make_pair(libName, entryPoint));
+            break;
+        }
+        default:
+            warn(loc, "attribute does not apply to a function delaration", "", "");
             break;
         }
     }

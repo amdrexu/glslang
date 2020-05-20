@@ -432,7 +432,7 @@ public:
 #ifndef GLSLANG_WEB
     TAttributeType attributeFromName(const TString& name) const;
     TAttributes* makeAttributes(const TString& identifier) const;
-    TAttributes* makeAttributes(const TString& identifier, TIntermNode* node) const;
+    TAttributes* makeAttributes(const TString& identifier, TIntermAggregate* agg) const;
     TAttributes* mergeAttributes(TAttributes*, TAttributes*) const;
 
     // Determine selection control from attributes
@@ -440,6 +440,8 @@ public:
     void handleSwitchAttributes(const TAttributes& attributes, TIntermNode*);
     // Determine loop control from attributes
     void handleLoopAttributes(const TAttributes& attributes, TIntermNode*);
+    // Determine mapped SPIR-V library function from attributes
+    void handleFunctionDeclaratorAttributes(const TSourceLoc&, const TAttributes& attributes, TFunction*);
 #endif
 
     void checkAndResizeMeshViewDim(const TSourceLoc&, TType&, bool isBlockMember);

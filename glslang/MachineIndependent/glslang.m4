@@ -346,6 +346,7 @@ GLSLANG_WEB_EXCLUDE_ON
 %type <interm.type> precise_qualifier non_uniform_qualifier
 %type <interm.typeList> type_name_list
 %type <interm.attributes> attribute attribute_list single_attribute
+%type <interm.intermNode> attribute_argument_list
 %type <interm.intermNode> demote_statement
 %type <interm.intermTypedNode> initializer_list
 GLSLANG_WEB_EXCLUDE_OFF
@@ -3864,7 +3865,9 @@ GLSLANG_WEB_EXCLUDE_ON
 attribute
     : LEFT_BRACKET LEFT_BRACKET attribute_list RIGHT_BRACKET RIGHT_BRACKET {
         $$ = $3;
-        parseContext.requireExtensions($1.loc, 1, &E_GL_EXT_control_flow_attributes, "attribute");
+        const char* const attribute_EXTs[] = { E_GL_EXT_control_flow_attributes, E_GL_AMD_shader_extensions };
+        const int Num_attribute_EXTs = sizeof(attribute_EXTs) / sizeof(attribute_EXTs[0]);
+        parseContext.requireExtensions($1.loc, Num_attribute_EXTs, attribute_EXTs, "attribute");
     }
 
 attribute_list
@@ -3879,8 +3882,16 @@ single_attribute
     : IDENTIFIER {
         $$ = parseContext.makeAttributes(*$1.string);
     }
-    | IDENTIFIER LEFT_PAREN constant_expression RIGHT_PAREN {
-        $$ = parseContext.makeAttributes(*$1.string, $3);
+    | IDENTIFIER LEFT_PAREN attribute_argument_list RIGHT_PAREN {
+        $$ = parseContext.makeAttributes(*$1.string, $3->getAsAggregate());
+    }
+
+attribute_argument_list
+    : constant_expression {
+        $$ = parseContext.intermediate.makeAggregate($1);
+    }
+    | attribute_argument_list COMMA constant_expression {
+        $$ = parseContext.intermediate.growAggregate($1, $3, $2.loc);
     }
 GLSLANG_WEB_EXCLUDE_OFF
 

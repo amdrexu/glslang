@@ -244,12 +244,12 @@ public:
     explicit TFunction(TOperator o) :
         TSymbol(0),
         op(o),
-        defined(false), prototyped(false), implicitThis(false), illegalImplicitThis(false), defaultParamCount(0) { }
+        defined(false), prototyped(false), implicitThis(false), illegalImplicitThis(false), defaultParamCount(0), libCall("", -1) { }
     TFunction(const TString *name, const TType& retType, TOperator tOp = EOpNull) :
         TSymbol(name),
         mangledName(*name + '('),
         op(tOp),
-        defined(false), prototyped(false), implicitThis(false), illegalImplicitThis(false), defaultParamCount(0)
+        defined(false), prototyped(false), implicitThis(false), illegalImplicitThis(false), defaultParamCount(0), libCall("", -1)
     {
         returnType.shallowCopy(retType);
         declaredBuiltIn = retType.getQualifier().builtIn;
@@ -319,6 +319,9 @@ public:
     virtual TParameter& operator[](int i) { assert(writable); return parameters[i]; }
     virtual const TParameter& operator[](int i) const { return parameters[i]; }
 
+    virtual void setLibraryFunctionCall(const std::pair<TString, int>& call) { relateToOperator(EOpSpirvExtInst); libCall = call; }
+    virtual const std::pair<TString, int>& getLibraryFunctionCall() const { return libCall; }
+
 #ifndef GLSLANG_WEB
     virtual void dump(TInfoSink& infoSink, bool complete = false) const override;
 #endif
@@ -342,6 +345,10 @@ protected:
                                // This is important for a static member function that has member variables in scope,
                                // but is not allowed to use them, or see hidden symbols instead.
     int  defaultParamCount;
+
+    // SPIR-V library function call from the attribute of "spirv_extinst". The first value is the name of
+    // this library while the second value is the entry-point ID to which this function is mapped.
+    std::pair<TString, int> libCall;
 };
 
 //

@@ -77,6 +77,7 @@ namespace glslang {
         EatIterationMultiple,
         EatPeelCount,
         EatPartialCount,
+        EatSpirvExtInst,
         EatFormatRgba32f,
         EatFormatRgba16f,
         EatFormatR32f,

@@ -3053,6 +3053,23 @@ bool TGlslangToSpvTraverser::visitAggregate(glslang::TVisit visit, glslang::TInt
         }
         result = builder.createBuiltinCall(builder.makeVoidType(), nonSemanticDebugPrintf, spv::NonSemanticDebugPrintfDebugPrintf, operands);
         builder.addExtension(spv::E_SPV_KHR_non_semantic_info);
+    } else if (node->getOp() == glslang::EOpSpirvExtInst) {
+        auto& libCall = node->getLibraryFunctionCall();
+        const auto& libName = "SPV_" + libCall.first;
+        const int entryPoint = libCall.second;
+        const char* extBuiltins = nullptr;
+        // Always change library name to const char*. This is required by getExtBuiltins().
+        if (libName == spv::E_SPV_AMD_shader_ballot)
+            extBuiltins = spv::E_SPV_AMD_shader_ballot;
+        else if (libName == spv::E_SPV_AMD_shader_trinary_minmax)
+            extBuiltins = spv::E_SPV_AMD_shader_trinary_minmax;
+        else if (libName == spv::E_SPV_AMD_shader_explicit_vertex_parameter)
+            extBuiltins = spv::E_SPV_AMD_shader_explicit_vertex_parameter;
+        else if (libName == spv::E_SPV_AMD_gcn_shader)
+            extBuiltins = spv::E_SPV_AMD_gcn_shader;
+        else
+            assert(0); // Invalid library name
+        result = builder.createBuiltinCall(resultType(), getExtBuiltins(extBuiltins), entryPoint, operands);
     } else {
         // Pass through to generic operations.
         switch (glslangOperands.size()) {

@@ -979,12 +979,17 @@ TFunction* TParseContext::handleFunctionDeclarator(const TSourceLoc& loc, TFunct
     TSymbol* symbol = symbolTable.find(function.getMangledName(), &builtIn);
     if (symbol && symbol->getAsFunction() && builtIn)
         requireProfile(loc, ~EEsProfile, "redefinition of built-in function");
+    // For SPIR-V library call, always ignore the built-in function and respect this redeclared one.
+    if (symbol && builtIn && function.getBuiltInOp() == EOpSpirvExtInst)
+        symbol = nullptr;
     const TFunction* prevDec = symbol ? symbol->getAsFunction() : 0;
     if (prevDec) {
         if (prevDec->isPrototyped() && prototype)
             profileRequires(loc, EEsProfile, 300, nullptr, "multiple prototypes for same function");
         if (prevDec->getType() != function.getType())
             error(loc, "overloaded functions must have the same return type", function.getName().c_str(), "");
+        if (prevDec->getLibraryFunctionCall() != function.getLibraryFunctionCall())
+            error(loc, "overloaded functions must have the same attribute", function.getName().c_str(), "'spirv_extinst'");
         for (int i = 0; i < prevDec->getParamCount(); ++i) {
             if ((*prevDec)[i].type->getQualifier().storage != function[i].type->getQualifier().storage)
                 error(loc, "overloaded functions must have the same parameter storage qualifiers for argument", function[i].type->getStorageQualifierString(), "%d", i+1);
@@ -1229,7 +1234,7 @@ TIntermTyped* TParseContext::handleFunctionCall(const TSourceLoc& loc, TFunction
                 addInputArgumentConversions(*fnCandidate, arguments);  // arguments may be modified if it's just a single argument node
             }
 
-            if (builtIn && fnCandidate->getBuiltInOp() != EOpNull) {
+            if ((builtIn && fnCandidate->getBuiltInOp() != EOpNull) || fnCandidate->getBuiltInOp() == EOpSpirvExtInst) {
                 // A function call mapped to a built-in operation.
                 result = handleBuiltInFunctionCall(loc, arguments, *fnCandidate);
             } else {
@@ -1293,8 +1298,14 @@ TIntermTyped* TParseContext::handleBuiltInFunctionCall(TSourceLoc loc, TIntermNo
 {
     checkLocation(loc, function.getBuiltInOp());
     TIntermTyped *result = intermediate.addBuiltInFunctionCall(loc, function.getBuiltInOp(),
-                                                               function.getParamCount() == 1,
+                                                               function.getParamCount() == 1 &&
+                                                               function.getBuiltInOp() != EOpSpirvExtInst, // Don't treat it as unary
                                                                arguments, function.getType());
+
+    // Special handling for mapped SPIR-V library function
+    if (function.getBuiltInOp() == EOpSpirvExtInst)
+        result->getAsAggregate()->setLibraryFunctionCall(function.getLibraryFunctionCall());
+
     if (obeyPrecisionQualifiers())
         computeBuiltinPrecisions(*result, function);
 

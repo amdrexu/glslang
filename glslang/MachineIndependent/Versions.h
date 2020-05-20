@@ -225,6 +225,7 @@ const char* const E_GL_AMD_gpu_shader_int16                     = "GL_AMD_gpu_sh
 const char* const E_GL_AMD_shader_image_load_store_lod          = "GL_AMD_shader_image_load_store_lod";
 const char* const E_GL_AMD_shader_fragment_mask                 = "GL_AMD_shader_fragment_mask";
 const char* const E_GL_AMD_gpu_shader_half_float_fetch          = "GL_AMD_gpu_shader_half_float_fetch";
+const char* const E_GL_AMD_shader_extensions                    = "GL_AMD_shader_extensions";
 
 const char* const E_GL_INTEL_shader_integer_functions2          = "GL_INTEL_shader_integer_functions2";
 

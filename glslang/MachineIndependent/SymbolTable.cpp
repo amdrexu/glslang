@@ -386,6 +386,7 @@ TFunction::TFunction(const TFunction& copyOf) : TSymbol(copyOf)
     implicitThis = copyOf.implicitThis;
     illegalImplicitThis = copyOf.illegalImplicitThis;
     defaultParamCount = copyOf.defaultParamCount;
+    libCall = copyOf.libCall;
 }
 
 TFunction* TFunction::clone() const
